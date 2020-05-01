@@ -239,49 +239,29 @@ def select_network(index):
 
 def propagate(scores):
     """
-    Doesn't work with list of lenght 0 or 1. (not possible in pytactoe.py)
-    Outputs list of network indices such that the frequency of each index
-    is exponentially proportional to the score it refers.
-    To modify evolution, change the power function and the coefficient of
-    p_scores
+    Outputs string of indices for the score list such that the frequency
+    of each index is exponentially proportional to its score.
     """
-    # Needs serious rethinking.
-    p_scores = np.array(scores)
-    p_scores += abs(np.amin(p_scores))
-    p_scores = p_scores*50 / np.sum(p_scores)
+    score_arr = np.array(scores)
+    score_arr += abs(np.amin(score_arr))
+    score_arr = 50 * score_arr / np.sum(score_arr)
+    polarized_scores = np.power(score_arr, 3)
+    polarized_scores = np.around(polarized_scores, 4)
 
-    polarize_scores = np.around(np.power(p_scores, 3), 4)
-    polarize_sorted = np.sort(polarize_scores)
-
-    edges = np.cumsum(polarize_sorted)
-    size = len(scores)
-    x_values = np.random.uniform(0, np.sum(polarize_sorted), (1, size))[0]
+    edges = np.cumsum(polarized_scores)
+    size = len(edges)
+    x_values = np.random.uniform(0, np.sum(polarized_scores), (1, size))[0]
     distribution = np.histogram(x_values, edges)
 
-    bins = np.concatenate((np.array([0]), distribution[0]))
-    count = 0
+    bins = distribution[0].tolist()
     propagate = []
-    parent_dict = {}
-    for parent in polarize_sorted.tolist():  # Accounts for duplicate scores.
-
-        index = np.where(polarize_scores == parent)[0]
-        if len(index) == 1:
-            index = index[0]
-
-        elif parent not in parent_dict.keys():
-            parent_dict[parent] = 0
-            index = index[0]
-
-        else:
-            parent_dict[parent] += 1
-            index = index[parent_dict[parent]]
-
-        children = bins[count]
-        for _ in range(children):
+    index = 0
+    for n in bins:
+        for _ in range(n):
             propagate.append(index)
-        count += 1
-
-    while len(propagate) < len(scores):  # last minute fix
+        index += 1
+    while len(propagate) < len(scores):  # lazy fix
+        index = np.random.randint(0, 50)
         propagate.append(index)
 
     return propagate
